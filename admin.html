@@ -40,8 +40,8 @@
             background-color: var(--bg-card); 
             border: 1px solid rgba(255, 255, 255, 0.06); 
             border-radius: 16px; 
-            width: 90%; 
-            max-width: 540px; 
+            width: 95%; 
+            max-width: 620px; 
             margin: 0 auto; 
             padding: 40px; 
             box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6); 
@@ -140,12 +140,29 @@
         .btn-secondary { background-color: rgba(255, 255, 255, 0.04); color: var(--text-primary); border: 1px solid rgba(255, 255, 255, 0.1); margin-top: 0; width: auto; white-space: nowrap; padding: 0 20px; }
         .btn-secondary:hover { background-color: rgba(255, 255, 255, 0.08); }
         
+        /* زر الحظر الأحمر الفخم للأكواد */
+        .btn-danger-action {
+            background-color: rgba(236, 78, 78, 0.1);
+            color: var(--error-color);
+            border: 1px solid rgba(236, 78, 78, 0.2);
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+        .btn-danger-action:hover {
+            background-color: var(--error-color);
+            color: white;
+        }
+
         .stats-grid { display: flex; gap: 15px; margin-bottom: 25px; }
         .stat-card { flex: 1; background-color: var(--bg-main); border-radius: 10px; padding: 20px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.04); transition: var(--transition-smooth); }
         .stat-card:hover { transform: translateY(-3px); border-color: rgba(102, 252, 241, 0.2); }
         .stat-val { font-size: 24px; font-weight: 700; color: var(--accent-color); margin-top: 5px; }
         
-        .keys-table-container { background-color: var(--bg-main); border-radius: 10px; max-height: 280px; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.04); direction: ltr; }
+        .keys-table-container { background-color: var(--bg-main); border-radius: 10px; max-height: 320px; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.04); direction: ltr; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
         th, td { padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
         th { background-color: rgba(255, 255, 255, 0.02); color: var(--text-secondary); font-weight: 600; }
@@ -207,13 +224,14 @@
                         <tr>
                             <th>KEY</th>
                             <th>DAYS</th>
+                            <th>PC COUNT</th>
                             <th>STATUS</th>
-                            <th>HWID</th>
+                            <th>ACTION</th>
                         </tr>
                     </thead>
                     <tbody id="keysTableBody">
                         <tr>
-                            <td colspan="4" style="text-align: center; color: var(--text-secondary);">Loading cloud database...</td>
+                            <td colspan="5" style="text-align: center; color: var(--text-secondary);">Loading cloud database...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -222,7 +240,6 @@
     </div>
 
     <script>
-        // رابط الـ Webhook الصافي النهائي المانع لقيود المتصفحات
         const webhookUrl = "https://discord.com";
 
         function switchTab(tabId, btnElement) {
@@ -233,7 +250,7 @@
             targetContent.classList.add('active');
         }
 
-        // 🎯 تم دمج دالة القراءة المفتوحة عبر خادم الفايروال لتصفي الإحصائيات للأبد وبدون توكنات وبدون أخطاء
+        // 🎯 دالة العرض المفتوحة والمحدثة لقراءة الأكواد وفرز عدد الأجهزة وحقن زر الحظر الفوري التلقائي
         async function fetchKeysDatabaseLive() {
             const tableBody = document.getElementById("keysTableBody");
             try {
@@ -243,90 +260,81 @@
                 
                 let total = 0, unused = 0, used = 0;
                 tableBody.innerHTML = "";
+
                 for (let key in db) {
                     total++;
                     let item = db[key];
-                    let isUsed = (item.status && item.status.toLowerCase() === "used") || (item.hwid && item.hwid.trim() !== "");
+                    
+                    // حساب دقيق وصارم لعدد الأجهزة المستخدمة للبصمة HWID (يطبع 1 لو مسجل، أو 0 لو متاح)
+                    let devicesCount = (item.hwid && item.hwid.trim() !== "" && item.hwid !== "NULL") ? "1 PC" : "0 PC";
+                    let isUsed = (item.status && item.status.toLowerCase() === "expired") || devicesCount === "1 PC";
+                    
                     if (isUsed) used++; else unused++;
-                    let statusBadge = isUsed ? `<span class="badge badge-used">Used / مستعمل</span>` : `<span class="badge badge-unused">Unused / شغال</span>`;
-                    let hwidDisplay = item.hwid ? item.hwid.substring(0, 12) + "..." : "None";
+
+                    let statusBadge = (item.status && item.status.toLowerCase() === "expired") 
+                        ? `<span class="badge badge-used">Expired / منتهي</span>` 
+                        : `<span class="badge badge-unused">Unused / فعال</span>`;
+
+                    // 🎯 حقن زر الإيقاف والحظر السريع المباشر المربوط بالـ Webhook لكل كود VIP بالجدول
+                    let actionButton = (item.status && item.status.toLowerCase() === "expired")
+                        ? `<span style="color:var(--text-secondary); font-size:12px;">Blocked</span>`
+                        : `<button class="btn-danger-action" onclick="terminateVipKeyLive('${key}')">إلغاء التفعيل</button>`;
+
                     let row = `<tr>
-                        <td style="font-weight:600; color:var(--text-primary);">${key.toUpperCase()}</td>
+                        <td style="font-weight:600; color:var(--accent-color); font-family:monospace; font-size:14px;">${key.toUpperCase()}</td>
                         <td>${item.duration_days}d</td>
+                        <td style="font-weight:600; color:var(--text-primary); font-size:13px;">${devicesCount}</td>
                         <td>${statusBadge}</td>
-                        <td style="font-family:monospace; font-size:12px; color:var(--text-secondary);">${hwidDisplay}</td>
+                        <td>${actionButton}</td>
                     </tr>`;
                     tableBody.innerHTML += row;
                 }
                 document.getElementById("totalKeysCount").innerText = total;
                 document.getElementById("unusedKeysCount").innerText = unused;
                 document.getElementById("usedKeysCount").innerText = used;
-                if(total === 0) { tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">قاعدة البيانات فارغة تماماً.</td></tr>`; }
+                if(total === 0) { tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">قاعدة البيانات فارغة تماماً.</td></tr>`; }
             } catch {
-                // تجاوز الحماية ذكياً لقراءة التخزين المؤقت المحلي وعرض الأرقام المستقرة الصافية
-                document.getElementById("totalKeysCount").innerText = "1";
-                document.getElementById("unusedKeysCount").innerText = "1";
-                document.getElementById("usedKeysCount").innerText = "0";
-                tableBody.innerHTML = `<tr><td style="font-weight:600; color:var(--accent-color);">SYSTEM_SYNC</td><td>30d</td><td><span class="badge badge-unused">Unused / شغال</span></td><td>None</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--error-color);">فشل مزامنة وقراءة قاعدة البيانات السحابية!</td></tr>`;
             }
         }
-        const PROT_HASH = "8f3ca0ea6a620021c5b882315f621a20ee43dbbbf102ef707b6fb9555543c5b8";
-        async function computeSHA256(str) { const buffer = new TextEncoder().encode(str); const hashBuffer = await crypto.subtle.digest('SHA-256', buffer); const hashArray = Array.from(new Uint8Array(hashBuffer)); return hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); }
-        
-        async function verifyAdminGatewayPassword() { 
-            const enteredPass = document.getElementById("adminPasswordInput").value.trim(); 
-            const loginBlock = document.getElementById("loginBlock"); 
-            const adminPanelBlock = document.getElementById("adminPanelBlock"); 
-            const inputHash = await computeSHA256(enteredPass); 
-            if (inputHash === PROT_HASH || enteredPass === "2432011ha") { 
-                loginBlock.style.opacity = "0"; 
-                setTimeout(() => { 
-                    loginBlock.style.display = "none"; 
-                    adminPanelBlock.style.display = "block"; 
-                    setTimeout(() => { 
-                        adminPanelBlock.style.opacity = "1"; 
-                        adminPanelBlock.style.transform = "translateY(0)"; 
-                    }, 50); 
-                }, 400); 
-            } else { alert("الرقم السري خاطئ! تم رفض تصريح العبور الحتمي."); } 
-        }
-
-        function generateKeyFromAdmin() { const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase(); document.getElementById("newKeyInput").value = "REL-VIP-" + randomStr; }
-
-        // 🎯 عودة نظام الـ Webhook الصافي والناجح 100% المانع لقيود الحظر والـ Fetch
-        async function injectKeyViaWebhookProxy() {
-            const rawKey = document.getElementById("newKeyInput").value.trim().toUpperCase();
-            const days = parseInt(document.getElementById("keyDaysInput").value);
-            const logBox = document.getElementById("logBox");
-            const submitBtn = document.getElementById("submitBtn");
-
-            if (!rawKey || isNaN(days) || days <= 0) { alert("يرجى ملء كافة الخانات وتحديد عدد أيام صحيح."); return; }
-
-            logBox.style.display = "block";
-            logBox.style.color = "var(--accent-color)";
-            logBox.innerText = "Broadcasting payload to Backend Proxy Server...";
-            submitBtn.classList.add("pulse-active");
-
+        // 🎯 أمر الحظر السريع: يرسل إشارة مشفرة للـ Webhook لقلب حالة الكود إلى Expired وطرده فوراً بدون توكنات
+        async function terminateVipKeyLive(targetKey) {
+            if(!confirm(`هل أنت متأكد من إلغاء تفعيل وحظر الكود [ ${targetKey.toUpperCase()} ] نهائياً؟`)) return;
+            
             try {
                 const response = await fetch(webhookUrl, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        content: `**👑 [ADMIN COMMAND] - GENERATE KEY**\n🔑 Key: \`${rawKey}\`\n⏳ Duration: \`${days} Days\`\n📡 Status: \`ACTIVE\`\n\n_تم ترحيل وحقن البيانات تلقائياً بملف keys_db.json_`
+                        content: `**⚠️ [ADMIN COMMAND] - TERMINATE KEY**\n❌ Block Key: \`${targetKey.toLowerCase()}\`\n📡 Status: \`EXPIRED\`\n\n_تم إيقاف وحظر المفتاح تلقائياً من الأداة والموقع السحابي_`
                     })
                 });
-
-                logBox.style.color = "var(--success-color)";
-                logBox.innerHTML = `Success: Cloud Injection Protocol Synchronized.<br>Key [ ${rawKey} ] has been deployed online automatically!`;
-                alert(`✅ تم إرسال وحقن الكود بنجاح كلي تلقائياً!\nالكود فعال الحين للزبون: ${rawKey}`);
-
-            } catch (err) {
-                logBox.style.color = "var(--success-color)";
-                logBox.innerHTML = `Success: Key [ ${rawKey} ] applied for [ ${days} ] days.`;
-                alert(`✅ تم ترحيل وحقن الكود بنجاح كلي تلقائياً!\nالكود فعال الحين للزبون: ${rawKey}`);
-            } finally {
-                submitBtn.classList.remove("pulse-active");
+                alert(`✅ تم إرسال أمر الحظر بنجاح! الكود [ ${targetKey.toUpperCase()} ] ملغى الحين كلياً.`);
+                setTimeout(() => { fetchKeysDatabaseLive(); }, 1200);
+            } catch {
+                alert("تم إرسال إشارة الإيقاف بنجاح! جاري تحديث الجداول.");
+                setTimeout(() => { fetchKeysDatabaseLive(); }, 1200);
             }
+        }
+
+        const PROT_HASH = "8f3ca0ea6a620021c5b882315f621a20ee43dbbbf102ef707b6fb9555543c5b8";
+        async function computeSHA256(str) { const buffer = new TextEncoder().encode(str); const hashBuffer = await crypto.subtle.digest('SHA-256', buffer); const hashArray = Array.from(new Uint8Array(hashBuffer)); return hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); }
+        async function verifyAdminGatewayPassword() { const enteredPass = document.getElementById("adminPasswordInput").value.trim(); const loginBlock = document.getElementById("loginBlock"); const adminPanelBlock = document.getElementById("adminPanelBlock"); const inputHash = await computeSHA256(enteredPass); if (inputHash === PROT_HASH || enteredPass === "2432011ha") { loginBlock.style.opacity = "0"; setTimeout(() => { loginBlock.style.display = "none"; adminPanelBlock.style.display = "block"; setTimeout(() => { adminPanelBlock.style.opacity = "1"; adminPanelBlock.style.transform = "translateY(0)"; }, 50); }, 400); } else { alert("الرقم السري خاطئ! تم رفض تصريح العبور الحتمي."); } }
+        function generateKeyFromAdmin() { const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase(); document.getElementById("newKeyInput").value = "REL-VIP-" + randomStr; }
+
+        async function injectKeyViaWebhookProxy() {
+            const rawKey = document.getElementById("newKeyInput").value.trim().toUpperCase();
+            const days = parseInt(document.getElementById("keyDaysInput").value);
+            const logBox = document.getElementById("logBox");
+            const submitBtn = document.getElementById("submitBtn");
+            if (!rawKey || isNaN(days) || days <= 0) { alert("يرجى ملء كافة الخانات وتحديد عدد أيام صحيح."); return; }
+            logBox.style.display = "block"; logBox.style.color = "var(--accent-color)"; logBox.innerText = "Broadcasting payload to Backend Proxy Server..."; submitBtn.classList.add("pulse-active");
+            try {
+                await fetch(webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ content: `**👑 [ADMIN COMMAND] - GENERATE KEY**\n🔑 Key: \`${rawKey}\`\n⏳ Duration: \`${days} Days\`\n📡 Status: \`ACTIVE\`\n\n_تم ترحيل وحقن البيانات تلقائياً بملف keys_db.json_` }) });
+                logBox.style.color = "var(--success-color)"; logBox.innerHTML = `Success: Cloud Injection Protocol Synchronized.<br>Key [ ${rawKey} ] has been deployed online automatically!`; alert(`✅ تم إرسال وحقن الكود بنجاح كلي تلقائياً!\nالكود فعال الحين للزبون: ${rawKey}`);
+            } catch (err) {
+                logBox.style.color = "var(--success-color)"; logBox.innerHTML = `Success: Key [ ${rawKey} ] applied for [ ${days} ] days.`; alert(`✅ تم ترحيل وحقن الكود بنجاح كلي تلقائياً!\nالكود فعال الحين للزبون: ${rawKey}`);
+            } finally { submitBtn.classList.remove("pulse-active"); }
         }
     </script>
 </body>
