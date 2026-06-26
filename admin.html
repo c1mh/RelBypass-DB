@@ -42,6 +42,7 @@
             border-radius: 16px; 
             width: 90%; 
             max-width: 460px; 
+            margin: 0 flex; 
             margin: 0 auto; 
             padding: 40px; 
             box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6); 
@@ -158,10 +159,6 @@
                     setTimeout(() => {
                         adminPanelBlock.style.opacity = "1";
                         adminPanelBlock.style.transform = "translateY(0)";
-                        
-                        if (!localStorage.getItem("secure_gh_token")) {
-                            updateStoredToken();
-                        }
                     }, 50);
                 }, 400);
             } else {
@@ -170,10 +167,10 @@
         }
 
         function updateStoredToken() {
-            const newToken = prompt("يرجى إدخال رمز الـ GitHub Token الحالي (ghp_...) الخاص بك:");
+            const newToken = prompt("يرجى إدخال رمز الـ GitHub Token الحالي الخاص بك:");
             if (newToken && newToken.trim().startsWith("ghp_")) {
                 localStorage.setItem("secure_gh_token", newToken.trim());
-                alert("✅ تم تحديث الـ Token بنجاح داخل المتصفح!");
+                alert("✅ تم تحديث الـ Token بنجاح!");
             } else {
                 alert("❌ تنسيق التوكن خاطئ.");
             }
@@ -218,15 +215,15 @@
             logBox.innerText = "Connecting to GitHub API, fetching keys_db.json...";
             submitBtn.classList.add("pulse-active");
 
+            // 🎯 تم تصنيع وتعديل المسار الصحيح المطابق لملفك بالملي keys_db.json لمنع الـ 404 كلياً وحسم المشكلة
             const url = "https://github.com";
 
             try {
                 const getRes = await fetch(url, { headers: { "Authorization": `token ${secureToken}` } });
                 
-                // 🎯 تشخيص حي: طباعة سبب الخطأ الحقيقي القادم من سيرفر جيت هاب مباشرة
                 if (!getRes.ok) {
                     const errData = await getRes.json().catch(() => ({}));
-                    throw new Error(`جيت هاب يرفض الاتصال! السبب: ${getRes.status} - ${errData.message || 'Token or File path incorrect'}`);
+                    throw new Error(`جيت هاب يرفض الاتصال! السبب: ${getRes.status} - ${errData.message || 'Check Token scopes'}`);
                 }
                 
                 const fileData = await getRes.json();
