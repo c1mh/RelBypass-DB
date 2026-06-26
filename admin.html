@@ -140,7 +140,6 @@
         .btn-secondary { background-color: rgba(255, 255, 255, 0.04); color: var(--text-primary); border: 1px solid rgba(255, 255, 255, 0.1); margin-top: 0; width: auto; white-space: nowrap; padding: 0 20px; }
         .btn-secondary:hover { background-color: rgba(255, 255, 255, 0.08); }
         
-        /* زر الحظر الأحمر الفخم للأكواد */
         .btn-danger-action {
             background-color: rgba(236, 78, 78, 0.1);
             color: var(--error-color);
@@ -250,13 +249,19 @@
             targetContent.classList.add('active');
         }
 
-        // 🎯 دالة العرض المفتوحة والمحدثة لقراءة الأكواد وفرز عدد الأجهزة وحقن زر الحظر الفوري التلقائي
+        // 🎯 تم دمج نفق الاتصال الآلي المفتوح (Allorigins Proxy Tunnel) لتطهير وقراءة مصفوفة ملف الـ JSON لايف وتفادي قيود الـ CORS تماماً
         async function fetchKeysDatabaseLive() {
             const tableBody = document.getElementById("keysTableBody");
+            const rawFileUrl = "https://githubusercontent.com" + new Date().getTime();
+            // استخدام النفق الرقمي المفتوح لتشفير وقبول الطلبات الفورية من الجوال
+            const proxyTunnelUrl = "https://allorigins.win" + encodeURIComponent(rawFileUrl);
+
             try {
-                const res = await fetch("https://githubusercontent.com" + new Date().getTime());
+                const res = await fetch(proxyTunnelUrl);
                 if (!res.ok) throw new Error();
-                const db = await res.json();
+                
+                const wrapperData = await res.json();
+                const db = JSON.parse(wrapperData.contents);
                 
                 let total = 0, unused = 0, used = 0;
                 tableBody.innerHTML = "";
@@ -265,7 +270,6 @@
                     total++;
                     let item = db[key];
                     
-                    // حساب دقيق وصارم لعدد الأجهزة المستخدمة للبصمة HWID (يطبع 1 لو مسجل، أو 0 لو متاح)
                     let devicesCount = (item.hwid && item.hwid.trim() !== "" && item.hwid !== "NULL") ? "1 PC" : "0 PC";
                     let isUsed = (item.status && item.status.toLowerCase() === "expired") || devicesCount === "1 PC";
                     
@@ -275,7 +279,6 @@
                         ? `<span class="badge badge-used">Expired / منتهي</span>` 
                         : `<span class="badge badge-unused">Unused / فعال</span>`;
 
-                    // 🎯 حقن زر الإيقاف والحظر السريع المباشر المربوط بالـ Webhook لكل كود VIP بالجدول
                     let actionButton = (item.status && item.status.toLowerCase() === "expired")
                         ? `<span style="color:var(--text-secondary); font-size:12px;">Blocked</span>`
                         : `<button class="btn-danger-action" onclick="terminateVipKeyLive('${key}')">إلغاء التفعيل</button>`;
@@ -294,15 +297,13 @@
                 document.getElementById("usedKeysCount").innerText = used;
                 if(total === 0) { tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">قاعدة البيانات فارغة تماماً.</td></tr>`; }
             } catch {
-                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--error-color);">فشل مزامنة وقراءة قاعدة البيانات السحابية!</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--error-color);">فشل قراءة السيرفر! يرجى الانتظار 3 ثواني وإعادة الضغط على التبويب لتحديث النفق.</td></tr>`;
             }
         }
-        // 🎯 أمر الحظر السريع: يرسل إشارة مشفرة للـ Webhook لقلب حالة الكود إلى Expired وطرده فوراً بدون توكنات
         async function terminateVipKeyLive(targetKey) {
             if(!confirm(`هل أنت متأكد من إلغاء تفعيل وحظر الكود [ ${targetKey.toUpperCase()} ] نهائياً؟`)) return;
-            
             try {
-                const response = await fetch(webhookUrl, {
+                await fetch(webhookUrl, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
