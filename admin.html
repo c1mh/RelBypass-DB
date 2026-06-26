@@ -127,6 +127,7 @@
         <input type="number" id="keyDaysInput" min="1" value="30">
 
         <button class="btn" id="submitBtn" onclick="injectKeyToGitHubServer()">صناعة وحقن الكود في السيرفر السحابي</button>
+        <button class="btn btn-secondary" style="margin-top: 15px; width: 100%;" onclick="updateStoredToken()">تحديث رمز الـ Token السري</button>
         
         <div class="log-box" id="logBox"></div>
     </div>
@@ -157,10 +158,24 @@
                     setTimeout(() => {
                         adminPanelBlock.style.opacity = "1";
                         adminPanelBlock.style.transform = "translateY(0)";
+                        
+                        if (!localStorage.getItem("secure_gh_token")) {
+                            updateStoredToken();
+                        }
                     }, 50);
                 }, 400);
             } else {
                 alert("الرقم السري خاطئ! تم رفض تصريح العبور الحتمي.");
+            }
+        }
+
+        function updateStoredToken() {
+            const newToken = prompt("يرجى إدخال رمز الـ GitHub Token القديم (الشغال) للحفظ بمتصفحك:");
+            if (newToken && newToken.trim().startsWith("ghp_")) {
+                localStorage.setItem("secure_gh_token", newToken.trim());
+                alert("✅ تم حفظ التوكن بأمان داخل متصفح جهازك!");
+            } else {
+                alert("❌ تنسيق غير صحيح! يجب أن يبدأ بـ ghp_");
             }
         }
 
@@ -169,24 +184,31 @@
             document.getElementById("newKeyInput").value = "REL-VIP-" + randomStr;
         }
 
-        function safeBtoa(str) {
-            return btoa(unescape(encodeURIComponent(str)));
+        // 🎯 إصلاح التشفير السحابي: دالة ترميز قياسية تدعم الـ UTF-8 الصافي المتوافق 100% مع جيت هاب لمنع أخطاء الرفض
+        function utf8_to_b64(str) {
+            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+                return String.fromCharCode('0x' + p1);
+            }));
+        }
+
+        // 🎯 دالة فك ترميز قياسية صافية ومضمونة
+        function b64_to_utf8(str) {
+            return decodeURIComponent(atob(str).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
         }
 
         async function injectKeyToGitHubServer() {
-            // 🎯 تم تعمية وتشفير التوكن الجديد الخاص بك داخل المصفوفة البرمجية لحجب ورصد روبوتات جيت هاب نهائياً
-            const secureArray = [
-                String.fromCharCode(103, 104, 112, 95), 
-                String.fromCharCode(90, 118, 84, 105, 107, 103, 73, 71, 81, 57, 102, 51), 
-                String.fromCharCode(114, 70, 50, 81, 79, 56, 102, 73, 53, 68, 69, 103), 
-                String.fromCharCode(85, 77, 70, 78, 81, 122, 48, 52, 53, 48, 105, 105)
-            ];
-            const cleanToken = secureArray.join("");
-            
+            const secureToken = localStorage.getItem("secure_gh_token");
             const rawKey = document.getElementById("newKeyInput").value.trim().toUpperCase();
             const days = parseInt(document.getElementById("keyDaysInput").value);
             const logBox = document.getElementById("logBox");
             const submitBtn = document.getElementById("submitBtn");
+
+            if (!secureToken) {
+                alert("خطأ: الـ Token غير مسجل! اضغط زر التحديث لإدخاله.");
+                return;
+            }
 
             if (!rawKey || isNaN(days) || days <= 0) {
                 alert("يرجى ملء كافة الخانات وتحديد عدد أيام صحيح.");
@@ -201,13 +223,14 @@
             const url = "https://github.com";
 
             try {
-                const getRes = await fetch(url, { headers: { "Authorization": `token ${cleanToken}` } });
-                if (!getRes.ok) throw new Error("Sync failure. Access token revoked or invalid.");
+                const getRes = await fetch(url, { headers: { "Authorization": `token ${secureToken}` } });
+                if (!getRes.ok) throw new Error("Sync failed. Stored token might lack repo permissions.");
                 
                 const fileData = await getRes.json();
                 const sha = fileData.sha;
                 
-                let currentContent = JSON.parse(decodeURIComponent(escape(atob(fileData.content))));
+                // فك التشفير القياسي المصلح بالملي
+                let currentContent = JSON.parse(b64_to_utf8(fileData.content));
 
                 currentContent[searchKey] = {
                     status: "unused",
@@ -215,13 +238,14 @@
                     hwid: ""
                 };
 
-                const updatedContentBase64 = safeBtoa(JSON.stringify(currentContent, null, 4));
+                // التشفير القياسي الصافي المتوافق هندسياً مع سيرفرات الـ API
+                const updatedContentBase64 = utf8_to_b64(JSON.stringify(currentContent, null, 4));
                 logBox.innerText += "\nCommit status: Uploading changes...";
 
                 const putRes = await fetch(url, {
                     method: "PUT",
                     headers: {
-                        "Authorization": `token ${cleanToken}`,
+                        "Authorization": `token ${secureToken}`,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
@@ -240,7 +264,7 @@
 
             } catch (err) {
                 logBox.innerHTML += `<br><span style="color: var(--error-color);">Error: ${err.message}</span>`;
-                alert("فشل الإجراء السحابي. تحقق من اتصال السيرفر المباشر.");
+                alert("فشل الإجراء السحابي. اضغط على الزر الأسود بالأسفل وأعد إدخال التوكن ليتنظف الكاش بجهازك.");
             } finally {
                 submitBtn.classList.remove("pulse-active");
             }
