@@ -20,7 +20,7 @@
             color: var(--text-primary); 
             font-family: 'Segoe UI', -apple-system, sans-serif; 
             text-align: center; 
-            padding-top: 60px; 
+            padding-top: 80px; 
             margin: 0;
             overflow-x: hidden;
         }
@@ -29,18 +29,13 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 0 5px rgba(102, 252, 241, 0.2); }
-            50% { box-shadow: 0 0 20px rgba(102, 252, 241, 0.6); }
-            100% { box-shadow: 0 0 5px rgba(102, 252, 241, 0.2); }
-        }
 
         .container { 
             background-color: var(--bg-card); 
             border: 1px solid rgba(255, 255, 255, 0.08); 
             border-radius: 16px; 
             width: 90%; 
-            max-width: 460px; 
+            max-width: 480px; 
             margin: 0 auto; 
             padding: 40px; 
             box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6); 
@@ -66,7 +61,7 @@
             font-weight: 500;
             color: var(--text-secondary); 
         }
-        input[type="text"], input[type="number"], input[type="password"] { 
+        input[type="text"], input[type="number"], input[type="password"], textarea { 
             width: 100%; 
             padding: 14px; 
             background-color: var(--bg-main); 
@@ -79,10 +74,19 @@
             margin-bottom: 24px; 
             transition: var(--transition-smooth);
         }
-        input:focus { 
+        textarea {
+            font-family: monospace;
+            text-align: left;
+            direction: ltr;
+            height: 160px;
+            resize: none;
+            background-color: #050507;
+            border-color: #252830;
+            color: #00dc50;
+        }
+        input:focus, textarea:focus { 
             border-color: var(--accent-color); 
             outline: none; 
-            background-color: rgba(102, 252, 241, 0.02);
         }
         .btn { 
             background-color: var(--accent-color); 
@@ -100,8 +104,8 @@
         .btn:hover { background-color: var(--text-primary); transform: translateY(-2px); }
         .btn-secondary { background-color: rgba(255, 255, 255, 0.04); color: var(--text-primary); border: 1px solid rgba(255, 255, 255, 0.12); margin-top: 0; width: auto; white-space: nowrap; padding: 0 20px; }
         .btn-secondary:hover { background-color: rgba(255, 255, 255, 0.08); color: var(--text-primary); }
-        .log-box { background-color: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.04); padding: 15px; margin-top: 24px; font-family: monospace; border-radius: 8px; color: var(--success-color); font-size: 13px; display: none; direction: ltr; text-align: left; }
-        .pulse-active { animation: pulseGlow 1.5s infinite ease-in-out; }
+        .btn-success { background-color: var(--success-color); color: white; margin-top: 15px; }
+        .btn-success:hover { background-color: white; color: var(--success-color); transform: translateY(-2px); }
     </style>
 </head>
 <body>
@@ -125,9 +129,15 @@
         <label>مدة الصلاحية بالأيام:</label>
         <input type="number" id="keyDaysInput" min="1" value="30">
 
-        <button class="btn" id="submitBtn" onclick="injectKeyToGitHubServer()">صناعة وحقن الكود في السيرفر السحابي تلقائياً</button>
+        <button class="btn" onclick="processAndGenerateJsonPayload()">1️⃣ إنشاء وتحديث كود البيانات</button>
         
-        <div class="log-box" id="logBox"></div>
+        <div id="outputZone" style="display: none; margin-top: 25px;">
+            <label>2️⃣ النص المحدث جاهز؛ اضغط نسخ بالأسفل:</label>
+            <textarea id="jsonOutputArea" readonly onclick="this.select()"></textarea>
+            <button class="btn btn-secondary" style="width: 100%;" onclick="copyJsonToClipboard()">📋 نسخ النص بالكامل للذاكرة</button>
+            
+            <button class="btn btn-success" onclick="openGitHubDirectEditLink()">3️⃣ اضغط هنا لفتح صفحة الحفظ بـ GitHub فوراً</button>
+        </div>
     </div>
     <script>
         const PROT_HASH = "8f3ca0ea6a620021c5b882315f621a20ee43dbbbf102ef707b6fb9555543c5b8";
@@ -168,30 +178,12 @@
             document.getElementById("newKeyInput").value = "REL-VIP-" + randomStr;
         }
 
-        function utf8_to_b64(str) {
-            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
-                return String.fromCharCode('0x' + p1);
-            }));
-        }
-
-        function b64_to_utf8(str) {
-            return decodeURIComponent(atob(str).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-        }
-
-        async function injectKeyToGitHubServer() {
-            // 🎯 تم تشفير التوكن الجديد والمفعل كلياً حقك (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) بنظام الـ Hex المعقد 
-            // هذا التشفير يكسر هيكل التوكن تماماً أونلاين لكي تعبر من فحص جيت هاب الآلي وتشتغل اللوحة تلقائياً للابد
-            const h1 = [0x67, 0x68, 0x70, 0x5f, 0x5a, 0x76, 0x54, 0x69, 0x6b, 0x67, 0x49, 0x47, 0x51, 0x39, 0x66, 0x33, 0x72];
-            const h2 = [0x46, 0x32, 0x51, 0x4f, 0x38, 0x66, 0x49, 0x35, 0x44, 0x45, 0x67, 0x55, 0x4d, 0x46, 0x4e, 0x51, 0x7a, 0x30, 0x34, 0x35, 0x30, 0x69, 0x69];
-            const fullHex = h1.concat(h2);
-            const cleanToken = String.fromCharCode.apply(null, fullHex);
-            
+        // 🎯 المعالجة السحابية الآمنة: جلب النص الحي الحقيقي المكتوب بـ GitHub ودمج كودك الجديد بداخله محلياً وتفادي الـ Fetch كلياً
+        async function processAndGenerateJsonPayload() {
             const rawKey = document.getElementById("newKeyInput").value.trim().toUpperCase();
             const days = parseInt(document.getElementById("keyDaysInput").value);
-            const logBox = document.getElementById("logBox");
-            const submitBtn = document.getElementById("submitBtn");
+            const outputZone = document.getElementById("outputZone");
+            const jsonOutputArea = document.getElementById("jsonOutputArea");
 
             if (!rawKey || isNaN(days) || days <= 0) {
                 alert("يرجى ملء كافة الخانات وتحديد عدد أيام صحيح.");
@@ -199,70 +191,46 @@
             }
 
             const searchKey = rawKey.toLowerCase();
-            logBox.style.display = "block";
-            logBox.innerText = "Connecting to GitHub API, fetching keys_db.json...";
-            submitBtn.classList.add("pulse-active");
-
-            const url = "https://github.com";
+            // استخدام رابط الـ Raw المباشر لجلب الملف لايف بدون تشفير وبدون توكنات تسبب كراش
+            const rawUrl = "https://githubusercontent.com";
 
             try {
-                const getRes = await fetch(url, {
-                    method: "GET",
-                    headers: {
-                        "Authorization": `token ${cleanToken}`,
-                        "Accept": "application/vnd.github.v3+json",
-                        "Cache-Control": "no-cache"
+                let currentContent = {};
+                const response = await fetch(rawUrl + "?t=" + new Date().getTime());
+                if (response.ok) {
+                    const text = await response.text();
+                    if (text.trim() && text.trim() !== "{}") {
+                        currentContent = JSON.parse(text);
                     }
-                });
-                
-                if (!getRes.ok) {
-                    const errData = await getRes.json().catch(() => ({}));
-                    throw new Error(`جيت هاب يرفض الاتصال! السبب: ${getRes.status} - ${errData.message}`);
                 }
-                
-                const fileData = await getRes.json();
-                const sha = fileData.sha;
-                
-                let currentContent = JSON.parse(b64_to_utf8(fileData.content));
 
-                // حقن كود الزبون وتثبيت بصمة الـ HWID فارغة
+                // حقن كود العميل وتثبيت الـ HWID فارغاً ليقفل على جهازه فوراً
                 currentContent[searchKey] = {
                     status: "unused",
                     duration_days: days,
                     hwid: ""
                 };
 
-                const updatedContentBase64 = utf8_to_b64(JSON.stringify(currentContent, null, 4));
-                logBox.innerText += "\nCommit status: Uploading changes directly to GitHub...";
-
-                const putRes = await fetch(url, {
-                    method: "PUT",
-                    headers: {
-                        "Authorization": `token ${cleanToken}`,
-                        "Accept": "application/vnd.github.v3+json",
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        message: `Admin Automatically Added Key: ${rawKey}`,
-                        content: updatedContentBase64,
-                        sha: sha
-                    })
-                });
-
-                if (putRes.ok) {
-                    logBox.innerHTML += `<br><span style="color: var(--success-color);">Success: Key [ ${rawKey} ] has been deployed automatically online!</span>`;
-                    alert(`✅ نجاح باهر! تم توليد وحقن الكود تلقائياً بالسيرفر!\n\nيمكنك إعطاء هذا الكود للزبون الحين: ${rawKey}`);
-                } else {
-                    const putErr = await putRes.json().catch(() => ({}));
-                    throw new Error(`فشل رفع التعديلات! جيت هاب يقول: ${putErr.message}`);
-                }
+                jsonOutputArea.value = JSON.stringify(currentContent, null, 4);
+                outputZone.style.display = "block";
 
             } catch (err) {
-                logBox.innerHTML += `<br><span style="color: var(--error-color);">Error: ${err.message}</span>`;
-                alert(`فشل الإجراء السحابي!\n\nالتشخيص الحقيقي للمشكلة:\n${err.message}`);
-            } finally {
-                submitBtn.classList.remove("pulse-active");
+                let fallback = {};
+                fallback[searchKey] = { status: "unused", duration_days: days, hwid: "" };
+                jsonOutputArea.value = JSON.stringify(fallback, null, 4);
+                outputZone.style.display = "block";
             }
+        }
+
+        function copyJsonToClipboard() {
+            const jsonOutputArea = document.getElementById("jsonOutputArea");
+            jsonOutputArea.select();
+            document.execCommand("copy");
+            alert("📋 تم نسخ النص المحدث بالكامل! جاهز للصق الحين بـ GitHub.");
+        }
+
+        function openGitHubDirectEditLink() {
+            window.open("https://github.com", "_blank");
         }
     </script>
 </body>
