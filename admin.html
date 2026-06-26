@@ -8,7 +8,6 @@
         :root {
             --bg-main: #0B0C10;
             --bg-card: #1F2833;
-            --border-color: #45A29E;
             --text-primary: #FFFFFF;
             --text-secondary: #C5C6C7;
             --accent-color: #66FCF1;
@@ -42,7 +41,6 @@
             border-radius: 16px; 
             width: 90%; 
             max-width: 460px; 
-            margin: 0 flex; 
             margin: 0 auto; 
             padding: 40px; 
             box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6); 
@@ -159,6 +157,10 @@
                     setTimeout(() => {
                         adminPanelBlock.style.opacity = "1";
                         adminPanelBlock.style.transform = "translateY(0)";
+                        
+                        if (!localStorage.getItem("secure_gh_token")) {
+                            updateStoredToken();
+                        }
                     }, 50);
                 }, 400);
             } else {
@@ -167,10 +169,10 @@
         }
 
         function updateStoredToken() {
-            const newToken = prompt("يرجى إدخال رمز الـ GitHub Token الحالي الخاص بك:");
+            const newToken = prompt("يرجى إدخال رمز الـ GitHub Token الحالي (ghp_...) الخاص بك بدقة وبدون أي مسافات فارغة:");
             if (newToken && newToken.trim().startsWith("ghp_")) {
                 localStorage.setItem("secure_gh_token", newToken.trim());
-                alert("✅ تم تحديث الـ Token بنجاح!");
+                alert("✅ تم تنظيف وحفظ الـ Token بنجاح داخل المتصفح!");
             } else {
                 alert("❌ تنسيق التوكن خاطئ.");
             }
@@ -194,7 +196,9 @@
         }
 
         async function injectKeyToGitHubServer() {
-            const secureToken = localStorage.getItem("secure_gh_token");
+            let secureToken = localStorage.getItem("secure_gh_token");
+            if (secureToken) secureToken = secureToken.trim().replace(/\s/g, "");
+
             const rawKey = document.getElementById("newKeyInput").value.trim().toUpperCase();
             const days = parseInt(document.getElementById("keyDaysInput").value);
             const logBox = document.getElementById("logBox");
@@ -215,15 +219,21 @@
             logBox.innerText = "Connecting to GitHub API, fetching keys_db.json...";
             submitBtn.classList.add("pulse-active");
 
-            // 🎯 تم تصنيع وتعديل المسار الصحيح المطابق لملفك بالملي keys_db.json لمنع الـ 404 كلياً وحسم المشكلة
             const url = "https://github.com";
 
             try {
-                const getRes = await fetch(url, { headers: { "Authorization": `token ${secureToken}` } });
+                const getRes = await fetch(url, {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `token ${secureToken}`,
+                        "Accept": "application/vnd.github.v3+json",
+                        "Cache-Control": "no-cache"
+                    }
+                });
                 
                 if (!getRes.ok) {
                     const errData = await getRes.json().catch(() => ({}));
-                    throw new Error(`جيت هاب يرفض الاتصال! السبب: ${getRes.status} - ${errData.message || 'Check Token scopes'}`);
+                    throw new Error(`جيت هاب يرفض الاتصال! السبب: ${getRes.status} - ${errData.message || 'Check Token or Permissions'}`);
                 }
                 
                 const fileData = await getRes.json();
@@ -244,6 +254,7 @@
                     method: "PUT",
                     headers: {
                         "Authorization": `token ${secureToken}`,
+                        "Accept": "application/vnd.github.v3+json",
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
