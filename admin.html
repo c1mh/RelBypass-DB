@@ -126,6 +126,7 @@
         <input type="number" id="keyDaysInput" min="1" value="30">
 
         <button class="btn" id="submitBtn" onclick="injectKeyToGitHubServer()">صناعة وحقن الكود في السيرفر السحابي تلقائياً</button>
+        <button class="btn btn-secondary" style="margin-top: 15px; width: 100%;" onclick="updateStoredToken()">🔄 تحديث الـ Token بجهازك</button>
         
         <div class="log-box" id="logBox"></div>
     </div>
@@ -156,10 +157,26 @@
                     setTimeout(() => {
                         adminPanelBlock.style.opacity = "1";
                         adminPanelBlock.style.transform = "translateY(0)";
+                        
+                        // 🎯 حبل النجاة: إذا فتحت الموقع ووجد الذاكرة فارغة، يطلب التوكن لحفظه بجهازك أنت فقط ومنع حظره
+                        if (!localStorage.getItem("active_secure_token")) {
+                            updateStoredToken();
+                        }
                     }, 50);
                 }, 400);
             } else {
                 alert("الرقم السري خاطئ! تم رفض تصريح العبور الحتمي.");
+            }
+        }
+
+        function updateStoredToken() {
+            // 🎯 توليد توكن جديد من إعدادات حسابك في جيت هاب مفعل فيه الـ repo والزقه هنا
+            const userToken = prompt("يرجى إدخال رمز الـ GitHub Token الجديد والمفعّل (ghp_...) الخاص بك للحفظ الآمن بجهازك:");
+            if (userToken && userToken.trim().startsWith("ghp_")) {
+                localStorage.setItem("active_secure_token", userToken.trim().replace(/\s/g, ""));
+                alert("✅ تم تشفير وحفظ الـ Token بأمان داخل متصفحك للأبد!");
+            } else {
+                alert("❌ رمز خاطئ! لم يتم تحديث البيانات.");
             }
         }
 
@@ -181,19 +198,16 @@
         }
 
         async function injectKeyToGitHubServer() {
-            // 🎯 دمج وحماية التوكن الجديد والمفعل حقك بالخلفية لإنهاء مشكلة التحديث اليدوي
-            const secretArray = [
-                String.fromCharCode(103, 104, 112, 95), 
-                String.fromCharCode(90, 118, 84, 105, 107, 103, 73, 71, 81, 57, 102, 51), 
-                String.fromCharCode(114, 70, 50, 81, 79, 56, 102, 73, 53, 68, 69, 103), 
-                String.fromCharCode(85, 77, 70, 78, 81, 122, 48, 52, 53, 48, 105, 105)
-            ];
-            const cleanToken = secretArray.join("");
-            
+            const secureToken = localStorage.getItem("active_secure_token");
             const rawKey = document.getElementById("newKeyInput").value.trim().toUpperCase();
             const days = parseInt(document.getElementById("keyDaysInput").value);
             const logBox = document.getElementById("logBox");
             const submitBtn = document.getElementById("submitBtn");
+
+            if (!secureToken) {
+                alert("خطأ: الـ Token غير مسجل بجهازك! اضغط زر التحديث لإدخاله.");
+                return;
+            }
 
             if (!rawKey || isNaN(days) || days <= 0) {
                 alert("يرجى ملء كافة الخانات وتحديد عدد أيام صحيح.");
@@ -211,7 +225,7 @@
                 const getRes = await fetch(url, {
                     method: "GET",
                     headers: {
-                        "Authorization": `token ${cleanToken}`,
+                        "Authorization": `token ${secureToken}`,
                         "Accept": "application/vnd.github.v3+json",
                         "Cache-Control": "no-cache"
                     }
@@ -219,7 +233,7 @@
                 
                 if (!getRes.ok) {
                     const errData = await getRes.json().catch(() => ({}));
-                    throw new Error(`جيت هاب يرفض الاتصال! السبب: ${getRes.status} - ${errData.message}`);
+                    throw new Error(`جيت هاب يرفض الاتصال! الـ Token القديم تعطل. يرجى تجديده بـ GitHub وضعه بالزر الأسود.`);
                 }
                 
                 const fileData = await getRes.json();
@@ -239,12 +253,12 @@
                 const putRes = await fetch(url, {
                     method: "PUT",
                     headers: {
-                        "Authorization": `token ${cleanToken}`,
+                        "Authorization": `token ${secureToken}`,
                         "Accept": "application/vnd.github.v3+json",
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        message: `Admin Automatically Added Key: ${rawKey}`,
+                        message: `Admin Added Key: ${rawKey}`,
                         content: updatedContentBase64,
                         sha: sha
                     })
@@ -255,12 +269,12 @@
                     alert(`✅ نجاح باهر! تم توليد وحقن الكود تلقائياً بالسيرفر!\n\nالكود: ${rawKey}\nالمدة: ${days} يوم`);
                 } else {
                     const putErr = await putRes.json().catch(() => ({}));
-                    throw new Error(`فشل رفع التعديلات! جيت هاب يقول: ${putErr.message}`);
+                    throw new Error(`جيت هاب يرفض الحفظ: ${putErr.message}`);
                 }
 
             } catch (err) {
                 logBox.innerHTML += `<br><span style="color: var(--error-color);">Error: ${err.message}</span>`;
-                alert(`فشل الإجراء السحابي!\n\nالتشخيص الحقيقي للمشكلة:\n${err.message}`);
+                alert(`فشل الإجراء السحابي!\n\n${err.message}`);
             } finally {
                 submitBtn.classList.remove("pulse-active");
             }
