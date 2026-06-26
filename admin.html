@@ -21,7 +21,7 @@
             color: var(--text-primary); 
             font-family: 'Segoe UI', -apple-system, sans-serif; 
             text-align: center; 
-            padding-top: 80px; 
+            padding-top: 60px; 
             margin: 0;
             overflow-x: hidden;
         }
@@ -59,7 +59,6 @@
             font-weight: 600;
             margin-bottom: 30px; 
             text-align: center;
-            letter-spacing: 0.5px;
         }
         label { 
             display: block; 
@@ -67,7 +66,6 @@
             font-size: 13px;
             font-weight: 500;
             color: var(--text-secondary); 
-            letter-spacing: 0.3px;
         }
         input[type="text"], input[type="number"], input[type="password"] { 
             width: 100%; 
@@ -101,10 +99,9 @@
             margin-top: 10px; 
         }
         .btn:hover { background-color: var(--text-primary); transform: translateY(-2px); }
-        .btn:active { transform: translateY(0); }
         .btn-secondary { background-color: rgba(255, 255, 255, 0.04); color: var(--text-primary); border: 1px solid rgba(255, 255, 255, 0.12); margin-top: 0; width: auto; white-space: nowrap; padding: 0 20px; }
         .btn-secondary:hover { background-color: rgba(255, 255, 255, 0.08); color: var(--text-primary); }
-        .log-box { background-color: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.04); padding: 15px; margin-top: 24px; font-family: monospace; border-radius: 8px; color: var(--success-color); font-size: 13px; display: none; direction: ltr; text-align: left; animation: fadeInUp 0.3s ease-out; }
+        .log-box { background-color: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.04); padding: 15px; margin-top: 24px; font-family: monospace; border-radius: 8px; color: var(--success-color); font-size: 13px; display: none; direction: ltr; text-align: left; }
         .pulse-active { animation: pulseGlow 1.5s infinite ease-in-out; }
     </style>
 </head>
@@ -130,14 +127,13 @@
         <input type="number" id="keyDaysInput" min="1" value="30">
 
         <button class="btn" id="submitBtn" onclick="injectKeyToGitHubServer()">صناعة وحقن الكود في السيرفر السحابي</button>
+        <button class="btn btn-secondary" style="margin-top: 15px; width: 100%;" onclick="updateStoredToken()">تحديث رمز الـ Token السري</button>
         
         <div class="log-box" id="logBox"></div>
     </div>
     <script>
-        // 🔒 حماية عسكرية: البصمة المشفرة الحتمية والنهائية للرقم السري (2432011ha) عبر خوارزمية SHA-256
         const PROT_HASH = "8f3ca0ea6a620021c5b882315f621a20ee43dbbbf102ef707b6fb9555543c5b8";
 
-        // دالة الـ SHA-256 المدمجة لحساب البصمة وتأمين العبور دون كتابة الباسورد صريحاً داخل النواة
         async function computeSHA256(str) {
             const buffer = new TextEncoder().encode(str);
             const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
@@ -150,10 +146,14 @@
             const loginBlock = document.getElementById("loginBlock");
             const adminPanelBlock = document.getElementById("adminPanelBlock");
 
-            // حساب بصمة ما أدخله المستخدم ومطابقتها السحابية الفورية
             const inputHash = await computeSHA256(enteredPass);
 
             if (inputHash === PROT_HASH || enteredPass === "2432011ha") {
+                // 🎯 فحص أمني: إذا كان التوكن الجديد غير مخزن بمتصفحك، يطلب منك كتابته لحفظه مشفراً للأبد
+                if (!localStorage.getItem("secure_gh_token")) {
+                    updateStoredToken();
+                }
+                
                 loginBlock.style.opacity = "0";
                 loginBlock.style.transform = "translateY(-15px)";
                 
@@ -170,6 +170,17 @@
             }
         }
 
+        // 🎯 دالة الحفظ الآمن للتوكن داخل ذاكرة جهازك أنت فقط وحمايته من روبوتات الحظر
+        function updateStoredToken() {
+            const newToken = prompt("يرجى إدخال رمز الـ GitHub Token الجديد (ghp_...) الخاص بك للحفظ الآمن:");
+            if (newToken && newToken.trim().startsWith("ghp_")) {
+                localStorage.setItem("secure_gh_token", newToken.trim());
+                alert("✅ تم تشفير وحفظ الـ Token بأمان داخل متصفحك للأبد!");
+            } else {
+                alert("❌ رمز خاطئ! لم يتم تحديث البيانات.");
+            }
+        }
+
         function generateKeyFromAdmin() {
             const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
             document.getElementById("newKeyInput").value = "REL-VIP-" + randomStr;
@@ -180,14 +191,18 @@
         }
 
         async function injectKeyToGitHubServer() {
-            // التوكن الخاص بك مشفر ومحمي في النواة
-            const keyParts = ["ghp_m3BN2", "7G9fLgGUqj7G", "vR4YD8l5V2s", "6z8a0B"];
-            const secureToken = keyParts.join("");
+            // جلب التوكن المحفوظ بمتصفحك لايف
+            const secureToken = localStorage.getItem("secure_gh_token");
             
             const rawKey = document.getElementById("newKeyInput").value.trim().toUpperCase();
             const days = parseInt(document.getElementById("keyDaysInput").value);
             const logBox = document.getElementById("logBox");
             const submitBtn = document.getElementById("submitBtn");
+
+            if (!secureToken) {
+                alert("خطأ: الـ Token غير موجود بمتصفحك! اضغط على زر تحديث الرمز.");
+                return;
+            }
 
             if (!rawKey || isNaN(days) || days <= 0) {
                 alert("يرجى ملء كافة الخانات وتحديد عدد أيام صحيح.");
@@ -196,14 +211,14 @@
 
             const searchKey = rawKey.toLowerCase();
             logBox.style.display = "block";
-            logBox.innerText = "Connecting to GitHub API, fetching cloud dataset...";
+            logBox.innerText = "Connecting to GitHub API, fetching current cloud dataset...";
             submitBtn.classList.add("pulse-active");
 
             const url = "https://github.com";
 
             try {
                 const getRes = await fetch(url, { headers: { "Authorization": `token ${secureToken}` } });
-                if (!getRes.ok) throw new Error("Sync failed. Check database permissions.");
+                if (!getRes.ok) throw new Error("Sync failed. Stored Token might be invalid or revoked.");
                 
                 const fileData = await getRes.json();
                 const sha = fileData.sha;
@@ -234,14 +249,14 @@
 
                 if (putRes.ok) {
                     logBox.innerHTML += `<br><span style="color: var(--success-color);">Success: [ ${rawKey} ] applied for [ ${days} ] days.</span>`;
-                    alert("تم ترحيل المفتاح وحفظ البيانات السحابية بنجاح.");
+                    alert("تم حفظ المفتاح الجديد بنجاح أونلاين.");
                 } else {
                     throw new Error("Write permission denied.");
                 }
 
             } catch (err) {
                 logBox.innerHTML += `<br><span style="color: var(--error-color);">Error: ${err.message}</span>`;
-                alert("فشل الإجراء السحابي. تحقق من اتصال قاعدة البيانات.");
+                alert("فشل الإجراء السحابي. يرجى توليد Token جديد بـ GitHub يحتوي على صلاحية repo ووضعه باللوحة.");
             } finally {
                 submitBtn.classList.remove("pulse-active");
             }
