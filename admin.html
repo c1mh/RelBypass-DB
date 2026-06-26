@@ -170,12 +170,12 @@
         }
 
         function updateStoredToken() {
-            const newToken = prompt("يرجى إدخال رمز الـ GitHub Token القديم (الشغال) للحفظ بمتصفحك:");
+            const newToken = prompt("يرجى إدخال رمز الـ GitHub Token الحالي (ghp_...) الخاص بك:");
             if (newToken && newToken.trim().startsWith("ghp_")) {
                 localStorage.setItem("secure_gh_token", newToken.trim());
-                alert("✅ تم حفظ التوكن بأمان داخل متصفح جهازك!");
+                alert("✅ تم تحديث الـ Token بنجاح داخل المتصفح!");
             } else {
-                alert("❌ تنسيق غير صحيح! يجب أن يبدأ بـ ghp_");
+                alert("❌ تنسيق التوكن خاطئ.");
             }
         }
 
@@ -184,14 +184,12 @@
             document.getElementById("newKeyInput").value = "REL-VIP-" + randomStr;
         }
 
-        // 🎯 إصلاح التشفير السحابي: دالة ترميز قياسية تدعم الـ UTF-8 الصافي المتوافق 100% مع جيت هاب لمنع أخطاء الرفض
         function utf8_to_b64(str) {
             return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
                 return String.fromCharCode('0x' + p1);
             }));
         }
 
-        // 🎯 دالة فك ترميز قياسية صافية ومضمونة
         function b64_to_utf8(str) {
             return decodeURIComponent(atob(str).split('').map(function(c) {
                 return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
@@ -224,12 +222,16 @@
 
             try {
                 const getRes = await fetch(url, { headers: { "Authorization": `token ${secureToken}` } });
-                if (!getRes.ok) throw new Error("Sync failed. Stored token might lack repo permissions.");
+                
+                // 🎯 تشخيص حي: طباعة سبب الخطأ الحقيقي القادم من سيرفر جيت هاب مباشرة
+                if (!getRes.ok) {
+                    const errData = await getRes.json().catch(() => ({}));
+                    throw new Error(`جيت هاب يرفض الاتصال! السبب: ${getRes.status} - ${errData.message || 'Token or File path incorrect'}`);
+                }
                 
                 const fileData = await getRes.json();
                 const sha = fileData.sha;
                 
-                // فك التشفير القياسي المصلح بالملي
                 let currentContent = JSON.parse(b64_to_utf8(fileData.content));
 
                 currentContent[searchKey] = {
@@ -238,7 +240,6 @@
                     hwid: ""
                 };
 
-                // التشفير القياسي الصافي المتوافق هندسياً مع سيرفرات الـ API
                 const updatedContentBase64 = utf8_to_b64(JSON.stringify(currentContent, null, 4));
                 logBox.innerText += "\nCommit status: Uploading changes...";
 
@@ -259,12 +260,13 @@
                     logBox.innerHTML += `<br><span style="color: var(--success-color);">Success: Key [ ${rawKey} ] has been deployed online.</span>`;
                     alert("تم حفظ المفتاح الجديد بنجاح أونلاين.");
                 } else {
-                    throw new Error("GitHub rejected the write command.");
+                    const putErr = await putRes.json().catch(() => ({}));
+                    throw new Error(`فشل رفع التعديلات الحية! جيت هاب يقول: ${putErr.message}`);
                 }
 
             } catch (err) {
                 logBox.innerHTML += `<br><span style="color: var(--error-color);">Error: ${err.message}</span>`;
-                alert("فشل الإجراء السحابي. اضغط على الزر الأسود بالأسفل وأعد إدخال التوكن ليتنظف الكاش بجهازك.");
+                alert(`فشل الإجراء السحابي!\n\nالتشخيص الحقيقي للمشكلة:\n${err.message}`);
             } finally {
                 submitBtn.classList.remove("pulse-active");
             }
