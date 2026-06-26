@@ -20,7 +20,7 @@
             color: var(--text-primary); 
             font-family: 'Segoe UI', -apple-system, sans-serif; 
             text-align: center; 
-            padding-top: 60px; 
+            padding-top: 80px; 
             margin: 0;
             overflow-x: hidden;
         }
@@ -78,8 +78,11 @@
             font-family: monospace;
             text-align: left;
             direction: ltr;
-            height: 140px;
+            height: 160px;
             resize: none;
+            background-color: #050507;
+            border-color: #252830;
+            color: #00dc50;
         }
         input:focus, textarea:focus { 
             border-color: var(--accent-color); 
@@ -102,7 +105,7 @@
         .btn-secondary { background-color: rgba(255, 255, 255, 0.04); color: var(--text-primary); border: 1px solid rgba(255, 255, 255, 0.12); margin-top: 0; width: auto; white-space: nowrap; padding: 0 20px; }
         .btn-secondary:hover { background-color: rgba(255, 255, 255, 0.08); color: var(--text-primary); }
         .btn-success { background-color: var(--success-color); color: white; margin-top: 15px; }
-        .btn-success:hover { background-color: white; color: var(--success-color); }
+        .btn-success:hover { background-color: white; color: var(--success-color); transform: translateY(-2px); }
     </style>
 </head>
 <body>
@@ -126,14 +129,14 @@
         <label>مدة الصلاحية بالأيام:</label>
         <input type="number" id="keyDaysInput" min="1" value="30">
 
-        <button class="btn" onclick="processAndGenerateJsonPayload()">1️⃣ إنشاء وتحديث كود البيانات</button>
+        <button class="btn" onclick="processAndGenerateJsonPayload()">إنشاء وتحديث مصفوفة الأكواد</button>
         
         <div id="outputZone" style="display: none; margin-top: 25px;">
-            <label>2️⃣ انسخ النص المحدث بالكامل من المربع بالأسفل:</label>
+            <label>انسخ النص المحدث بالكامل من المربع بالأسفل:</label>
             <textarea id="jsonOutputArea" readonly onclick="this.select()"></textarea>
-            <button class="btn btn-secondary" style="width: 100%;" onclick="copyJsonToClipboard()">📋 نسخ النص بالكامل بضغطة زر</button>
+            <button class="btn btn-secondary" style="width: 100%;" onclick="copyJsonToClipboard()">📋 نسخ النص بالكامل للذاكرة</button>
             
-            <button class="btn btn-success" onclick="openGitHubDirectEditLink()">3️⃣ اضغط هنا لفتح صفحة التحديث بـ GitHub فوراً</button>
+            <button class="btn btn-success" onclick="openGitHubDirectEditLink()">🚀 فتح صفحة التحديث بـ GitHub فوراً</button>
         </div>
     </div>
     <script>
@@ -175,7 +178,7 @@
             document.getElementById("newKeyInput").value = "REL-VIP-" + randomStr;
         }
 
-        // 🎯 المنظومة السريعة: جلب النص الحالي أونلاين، وحقن كودك الجديد فيه، ثم عرضه للنسخ لتخطي الـ Fetch كلياً
+        // 🎯 النظام المفتوح السريع: جلب المضمون الحالي، وحقن كودك الجديد فيه بالأيام الفريدة، وعرضه فوراً للنسخ والتخلص من مشاكل التوكن
         async function processAndGenerateJsonPayload() {
             const rawKey = document.getElementById("newKeyInput").value.trim().toUpperCase();
             const days = parseInt(document.getElementById("keyDaysInput").value);
@@ -193,7 +196,7 @@
             try {
                 let currentContent = {};
                 
-                // جلب قاعدة البيانات الحالية أونلاين لايف بلمحة بصر
+                // سحب الملف الحالي لايف من الإنترنت لتفادي فرمتة الأكواد القديمة
                 const response = await fetch(rawUrl + "?t=" + new Date().getTime());
                 if (response.ok) {
                     const text = await response.text();
@@ -202,20 +205,20 @@
                     }
                 }
 
-                // حقن المفتاح وتحديد الأيام والـ HWID المفرغ
+                // حقن كود العميل الجديد وتثبيت بصمة الـ HWID فارغة ليقفل على أول جهاز يفتحه
                 currentContent[searchKey] = {
                     status: "unused",
                     duration_days: days,
                     hwid: ""
                 };
 
-                // توليد الهيكل الجديد الفخم وعرضه داخل المربع بالملي
+                // طباعة التنسيق النهائي الفخم داخل الصندوق
                 jsonOutputArea.value = JSON.stringify(currentContent, null, 4);
                 outputZone.style.display = "block";
-                alert("✅ تم توليد وتحديث كود البيانات بنجاح! انسخ الكود من الأسفل واضغط الزر الأخضر لحفظه.");
+                alert("✅ تم توليد وتحديث البيانات السحابية بنجاح! انسخ النص واضغط الزر الأخضر لحفظه بجيت هاب.");
 
             } catch (err) {
-                alert("فشل جلب قاعدة البيانات أونلاين! جاري توليد كود صافي...");
+                alert("جاري إنشاء مصفوفة جديدة لعدم توفر ملف قديم...");
                 let fallback = {};
                 fallback[searchKey] = { status: "unused", duration_days: days, hwid: "" };
                 jsonOutputArea.value = JSON.stringify(fallback, null, 4);
@@ -227,10 +230,9 @@
             const jsonOutputArea = document.getElementById("jsonOutputArea");
             jsonOutputArea.select();
             document.execCommand("copy");
-            alert("📋 تم نسخ نص الـ JSON الجديد بنجاح! جاهز للصق الحين.");
+            alert("📋 تم نسخ نص الـ JSON الجديد بالكامل للذاكرة!");
         }
 
-        // 🎯 الزر السحري: ينقلك مباشرة لصفحة التعديل الفوري لملفك على جيت هاب بدون توكن وبدون تعليق
         function openGitHubDirectEditLink() {
             window.open("https://github.com", "_blank");
         }
