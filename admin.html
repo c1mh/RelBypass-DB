@@ -5,35 +5,132 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>REL BYPASS - ADMIN PANEL</title>
     <style>
-        body { background-color: #08080a; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; padding-top: 50px; margin: 0; }
-        .container { background-color: #0e1014; border: 2px solid #ff2832; border-radius: 20px; width: 95%; max-width: 550px; margin: 0 auto; padding: 40px; box-shadow: 0 0 25px rgba(255, 40, 50, 0.2); }
-        h1 { color: #ff2832; font-family: 'Consolas', monospace; letter-spacing: 2px; margin-bottom: 30px; }
-        label { display: block; text-align: right; margin-bottom: 8px; font-weight: bold; color: #8a8a98; }
-        input[type="text"], input[type="number"], input[type="password"] { width: 100%; padding: 14px; background-color: #14161d; border: 1px solid #282832; border-radius: 8px; color: white; font-size: 16px; text-align: center; box-sizing: border-box; margin-bottom: 20px; }
-        input:focus { border-color: #ff2832; outline: none; }
-        .btn { background-color: #ff2832; color: white; border: none; width: 100%; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        .btn:hover { background-color: white; color: #ff2832; box-shadow: 0 0 15px rgba(255, 255, 255, 0.4); }
-        .log-box { background-color: #000; border: 1px solid #282832; padding: 15px; margin-top: 20px; text-align: left; font-family: monospace; border-radius: 5px; color: #00dc50; font-size: 13px; max-height: 120px; overflow-y: auto; display: none; }
+        :root {
+            --bg-main: #0B0C10;
+            --bg-card: #1F2833;
+            --border-color: #45A29E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #C5C6C7;
+            --accent-color: #66FCF1;
+            --error-color: #EC4E4E;
+            --success-color: #2ECC71;
+        }
+        body { 
+            background-color: var(--bg-main); 
+            color: var(--text-primary); 
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; 
+            text-align: center; 
+            padding-top: 60px; 
+            margin: 0; 
+        }
+        .container { 
+            background-color: var(--bg-card); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            border-radius: 12px; 
+            width: 95%; 
+            max-width: 480px; 
+            margin: 0 auto; 
+            padding: 40px; 
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); 
+            text-align: right;
+        }
+        h1 { 
+            color: var(--text-primary); 
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 30px; 
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+        label { 
+            display: block; 
+            margin-bottom: 10px; 
+            font-size: 14px;
+            font-weight: 500; 
+            color: var(--text-secondary); 
+        }
+        input[type="text"], input[type="number"], input[type="password"] { 
+            width: 100%; 
+            padding: 12px; 
+            background-color: var(--bg-main); 
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            border-radius: 6px; 
+            color: var(--text-primary); 
+            font-size: 15px; 
+            text-align: center; 
+            box-sizing: border-box; 
+            margin-bottom: 24px; 
+            transition: border-color 0.2s;
+        }
+        input:focus { 
+            border-color: var(--accent-color); 
+            outline: none; 
+        }
+        .btn { 
+            background-color: var(--accent-color); 
+            color: var(--bg-main); 
+            border: none; 
+            width: 100%; 
+            padding: 14px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            transition: background-color 0.2s, color 0.2s; 
+            margin-top: 10px; 
+        }
+        .btn:hover { 
+            background-color: var(--text-primary); 
+            color: var(--bg-main); 
+        }
+        .btn-secondary {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            margin-top: 0;
+            width: auto;
+            white-space: nowrap;
+            padding: 0 20px;
+        }
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+        .log-box { 
+            background-color: rgba(0, 0, 0, 0.2); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+            padding: 15px; 
+            margin-top: 24px; 
+            text-align: right; 
+            font-family: monospace; 
+            border-radius: 6px; 
+            color: var(--success-color); 
+            font-size: 13px; 
+            max-height: 120px; 
+            overflow-y: auto; 
+            display: none; 
+            direction: ltr;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>👑 لوحة التحكم والمفاتيح السرية</h1>
+        <h1>لوحة التحكم والمفاتيح السحابية</h1>
         
-        <label>1️⃣ توكن جيت هاب السري (GitHub Token):</label>
-        <input type="password" id="githubToken" placeholder="ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" autocomplete="off">
+        <label>رمز الوصول السري (GitHub Token):</label>
+        <input type="password" id="githubToken" autocomplete="off">
 
-        <label>2️⃣ اكتب كود الـ VIP المدفوع (أو اضغط توليد عشوائي):</label>
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <input type="text" id="newKeyInput" placeholder="REL-VIP-XXXXXX" style="margin-bottom: 0;">
-            <button class="btn" style="margin-top: 0; width: auto; white-space: nowrap; padding: 0 20px;" onclick="generateKeyFromAdmin()">🎲 عشوائي</button>
+        <label>كود الـ VIP المدفوع:</label>
+        <div style="display: flex; gap: 10px; margin-bottom: 24px;">
+            <input type="text" id="newKeyInput" style="margin-bottom: 0;">
+            <button class="btn btn-secondary" onclick="generateKeyFromAdmin()">توليد عشوائي</button>
         </div>
 
-        <label>3️⃣ حدد مدة الصلاحية على كيفك بالملي (بالأيام):</label>
-        <input type="number" id="keyDaysInput" placeholder="اكتب عدد الأيام المالي بدقة (مثال: 3 أو 14)" min="1">
+        <label>مدة الصلاحية بالأيام:</label>
+        <input type="number" id="keyDaysInput" min="1">
 
-        <button class="btn" onclick="injectKeyToGitHubServer()">🚀 صناعة وحقن الكود في السيرفر السحابي</button>
+        <button class="btn" onclick="injectKeyToGitHubServer()">صناعة وحقن الكود في السيرفر السحابي</button>
         
         <div class="log-box" id="logBox"></div>
     </div>
@@ -44,7 +141,6 @@
             document.getElementById("newKeyInput").value = "REL-VIP-" + randomStr;
         }
 
-        // 🎯 دالة تشفير آمنة ومحدثة تدعم النصوص والرموز الطويلة بدون كراش أونلاين
         function safeBtoa(str) {
             return btoa(unescape(encodeURIComponent(str)));
         }
@@ -56,13 +152,13 @@
             const logBox = document.getElementById("logBox");
 
             if (!token || !rawKey || isNaN(days) || days <= 0) {
-                alert("❌ يرجى ملء كافة الخانات وتحديد عدد أيام صحيح!");
+                alert("يرجى ملء كافة الخانات وتحديد عدد أيام صحيح.");
                 return;
             }
 
             const searchKey = rawKey.toLowerCase();
             logBox.style.display = "block";
-            logBox.innerText = "⏳ جاري الاتصال بخادم جيت هاب وجلب ملف البيانات الحالية...";
+            logBox.innerText = "Connecting to GitHub API, fetching current dataset...";
 
             const repoOwner = "c1mh";
             const repoName = "RelBypass-DB";
@@ -71,25 +167,22 @@
 
             try {
                 const getRes = await fetch(url, { headers: { "Authorization": `token ${token}` } });
-                if (!getRes.ok) throw new Error("التوكن السري غير صحيح أو الصلاحيات ناقصة!");
+                if (!getRes.ok) throw new Error("Unauthorized or invalid token.");
                 
                 const fileData = await getRes.json();
                 const sha = fileData.sha;
                 
-                // فك التشفير السليم
                 let currentContent = JSON.parse(decodeURIComponent(escape(atob(fileData.content))));
 
-                // حقن المفتاح وتصفير خانة الـ hwid لتقفل على أول جهاز للزبون تلقائياً
                 currentContent[searchKey] = {
                     status: "unused",
                     duration_days: days,
                     hwid: ""
                 };
 
-                // استخدام دالة التشفير المحدثة الصافية لمنع الرفض
                 const updatedContentBase64 = safeBtoa(JSON.stringify(currentContent, null, 4));
 
-                logBox.innerText += "\n⏳ جاري حقن الكود الجديد وتحديث قاعدة البيانات السحابية...";
+                logBox.innerText += "\nInjecting record, updating database...";
 
                 const putRes = await fetch(url, {
                     method: "PUT",
@@ -105,15 +198,15 @@
                 });
 
                 if (putRes.ok) {
-                    logBox.innerHTML += `<br><span style="color: #00dc50;">✅ نجاح باهر! تم حقن الكود المدفوع [ ${rawKey} ] لمدة [ ${days} يوم ] بنجاح!</span>`;
-                    alert(`✅ تم إنشاء وحقن الكود بنجاح!\nالكود: ${rawKey}\nالمدة: ${days} يوم`);
+                    logBox.innerHTML += `<br><span style="color: var(--success-color);">Success: Key [ ${rawKey} ] has been injected for [ ${days} ] days.</span>`;
+                    alert("تم ترحيل المفتاح وحفظ البيانات السحابية بنجاح.");
                 } else {
-                    throw new Error("فشل في حفظ التعديلات السحابية!");
+                    throw new Error("Failed to commit changes.");
                 }
 
             } catch (err) {
-                logBox.innerHTML += `<br><span style="color: #ff2832;">❌ خطأ برمجي: ${err.message}</span>`;
-                alert("❌ فشل الحقن! تأكد أن التوكن تم إنشاؤه بصلاحية repo كاملة.");
+                logBox.innerHTML += `<br><span style="color: var(--error-color);">Error: ${err.message}</span>`;
+                alert("فشل الإجراء السحابي. يرجى التحقق من الصلاحيات والاتصال.");
             }
         }
     </script>
