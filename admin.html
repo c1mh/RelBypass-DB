@@ -39,13 +39,16 @@
     </div>
 
     <script>
-        // دالة توليد كود عشوائي فخم داخل اللوحة
         function generateKeyFromAdmin() {
             const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
             document.getElementById("newKeyInput").value = "REL-VIP-" + randomStr;
         }
 
-        // 🚀 دالة الاتصال والحقن السحابي المباشر في جيت هاب بدون ملفات محليه
+        // 🎯 دالة تشفير آمنة ومحدثة تدعم النصوص والرموز الطويلة بدون كراش أونلاين
+        function safeBtoa(str) {
+            return btoa(unescape(encodeURIComponent(str)));
+        }
+
         async function injectKeyToGitHubServer() {
             const token = document.getElementById("githubToken").value.trim();
             const rawKey = document.getElementById("newKeyInput").value.trim().toUpperCase();
@@ -57,38 +60,37 @@
                 return;
             }
 
-            const searchKey = rawKey.toLowerCase(); // الكود بداخل السيرفر يكون بأحرف صغيرة
+            const searchKey = rawKey.toLowerCase();
             logBox.style.display = "block";
             logBox.innerText = "⏳ جاري الاتصال بخادم جيت هاب وجلب ملف البيانات الحالية...";
 
-            // مسارات ومحددات مستودع الجيت هاب الخاص بك بالملي
             const repoOwner = "c1mh";
             const repoName = "RelBypass-DB";
             const filePath = "keys_db.json";
             const url = `https://github.com{repoOwner}/${repoName}/contents/${filePath}`;
 
             try {
-                // 1. جلب الملف الحالي والـ SHA الخاص به من جيت هاب
                 const getRes = await fetch(url, { headers: { "Authorization": `token ${token}` } });
-                if (!getRes.ok) throw new Error("فشل في العثور على الملف أو التوكن غير صحيح!");
+                if (!getRes.ok) throw new Error("التوكن السري غير صحيح أو الصلاحيات ناقصة!");
                 
                 const fileData = await getRes.json();
                 const sha = fileData.sha;
-                // فك تشفير محتوى الملف القديم من Base64
-                let currentContent = JSON.parse(atob(fileData.content));
+                
+                // فك التشفير السليم
+                let currentContent = JSON.parse(decodeURIComponent(escape(atob(fileData.content))));
 
-                // 2. حقن الكود الجديد والمدة التي حددتها أنت على كيفك بالملي داخل المصفوفة
+                // حقن المفتاح وتصفير خانة الـ hwid لتقفل على أول جهاز للزبون تلقائياً
                 currentContent[searchKey] = {
                     status: "unused",
-                    duration_days: days
+                    duration_days: days,
+                    hwid: ""
                 };
 
-                // إعادة تشفير الملف المحدث إلى Base64 لإرساله
-                const updatedContentBase64 = btoa(JSON.stringify(currentContent, null, 4));
+                // استخدام دالة التشفير المحدثة الصافية لمنع الرفض
+                const updatedContentBase64 = safeBtoa(JSON.stringify(currentContent, null, 4));
 
                 logBox.innerText += "\n⏳ جاري حقن الكود الجديد وتحديث قاعدة البيانات السحابية...";
 
-                // 3. رفع وتحديث الملف النهائي أونلاين على السيرفر بلمحة بصر
                 const putRes = await fetch(url, {
                     method: "PUT",
                     headers: {
@@ -103,7 +105,7 @@
                 });
 
                 if (putRes.ok) {
-                    logBox.innerHTML += `<br><span style="color: #00dc50;">✅ نجاح باهر! تم حقن الكود المدفوع [ ${rawKey} ] لمدة [ ${days} يوم ] بنجاح، وهو فعال الحين في الأداة والموقع!</span>`;
+                    logBox.innerHTML += `<br><span style="color: #00dc50;">✅ نجاح باهر! تم حقن الكود المدفوع [ ${rawKey} ] لمدة [ ${days} يوم ] بنجاح!</span>`;
                     alert(`✅ تم إنشاء وحقن الكود بنجاح!\nالكود: ${rawKey}\nالمدة: ${days} يوم`);
                 } else {
                     throw new Error("فشل في حفظ التعديلات السحابية!");
@@ -111,7 +113,7 @@
 
             } catch (err) {
                 logBox.innerHTML += `<br><span style="color: #ff2832;">❌ خطأ برمجي: ${err.message}</span>`;
-                alert("❌ فشل الحقن السحابي! تأكد من صحة التوكن السري الخاص بك.");
+                alert("❌ فشل الحقن! تأكد أن التوكن تم إنشاؤه بصلاحية repo كاملة.");
             }
         }
     </script>
