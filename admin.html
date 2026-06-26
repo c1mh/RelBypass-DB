@@ -140,31 +140,12 @@
         .btn-secondary { background-color: rgba(255, 255, 255, 0.04); color: var(--text-primary); border: 1px solid rgba(255, 255, 255, 0.1); margin-top: 0; width: auto; white-space: nowrap; padding: 0 20px; }
         .btn-secondary:hover { background-color: rgba(255, 255, 255, 0.08); }
         
-        .stats-grid {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        .stat-card {
-            flex: 1;
-            background-color: var(--bg-main);
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            transition: var(--transition-smooth);
-        }
+        .stats-grid { display: flex; gap: 15px; margin-bottom: 25px; }
+        .stat-card { flex: 1; background-color: var(--bg-main); border-radius: 10px; padding: 20px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.04); transition: var(--transition-smooth); }
         .stat-card:hover { transform: translateY(-3px); border-color: rgba(102, 252, 241, 0.2); }
         .stat-val { font-size: 24px; font-weight: 700; color: var(--accent-color); margin-top: 5px; }
         
-        .keys-table-container {
-            background-color: var(--bg-main);
-            border-radius: 10px;
-            max-height: 280px;
-            overflow-y: auto;
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            direction: ltr;
-        }
+        .keys-table-container { background-color: var(--bg-main); border-radius: 10px; max-height: 280px; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.04); direction: ltr; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
         th, td { padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
         th { background-color: rgba(255, 255, 255, 0.02); color: var(--text-secondary); font-weight: 600; }
@@ -247,32 +228,32 @@
         function switchTab(tabId, btnElement) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
             btnElement.classList.add('active');
             const targetContent = document.getElementById(tabId);
             targetContent.classList.add('active');
         }
 
         async function fetchKeysDatabaseLive() {
+            const secureToken = localStorage.getItem("active_secure_token");
             const tableBody = document.getElementById("keysTableBody");
+            if (!secureToken) { tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--error-color);">يرجى العودة لعلامة تبويب التوليد وحقن التوكن بالزر الأسود أولاً لتفعيل شاشة العرض.</td></tr>`; return; }
             try {
-                const res = await fetch("https://githubusercontent.com" + new Date().getTime());
+                const res = await fetch(url + "?t=" + new Date().getTime(), {
+                    method: "GET",
+                    headers: { "Authorization": `token ${secureToken}`, "Accept": "application/vnd.github.v3+json", "Cache-Control": "no-cache" }
+                });
                 if (!res.ok) throw new Error();
-                const db = await res.json();
-                
+                const fileData = await res.json();
+                const db = JSON.parse(b64_to_utf8(fileData.content));
                 let total = 0, unused = 0, used = 0;
                 tableBody.innerHTML = "";
-
                 for (let key in db) {
                     total++;
                     let item = db[key];
                     let isUsed = (item.status && item.status.toLowerCase() === "used") || (item.hwid && item.hwid.trim() !== "");
-                    
                     if (isUsed) used++; else unused++;
-
                     let statusBadge = isUsed ? `<span class="badge badge-used">Used / مستعمل</span>` : `<span class="badge badge-unused">Unused / شغال</span>`;
                     let hwidDisplay = item.hwid ? item.hwid.substring(0, 12) + "..." : "None";
-
                     let row = `<tr>
                         <td style="font-weight:600; color:var(--text-primary);">${key.toUpperCase()}</td>
                         <td>${item.duration_days}d</td>
@@ -281,17 +262,12 @@
                     </tr>`;
                     tableBody.innerHTML += row;
                 }
-
                 document.getElementById("totalKeysCount").innerText = total;
                 document.getElementById("unusedKeysCount").innerText = unused;
                 document.getElementById("usedKeysCount").innerText = used;
-
                 if(total === 0) { tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">قاعدة البيانات فارغة تماماً.</td></tr>`; }
-            } catch {
-                tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--error-color);">فشل مزامنة البيانات! تحقق من ملف الـ JSON.</td></tr>`;
-            }
+            } catch { tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--error-color);">فشل مزامنة البيانات! الـ Token القديم ميت. جدده وضعه بالزر الأسود.</td></tr>`; }
         }
-
         const PROT_HASH = "8f3ca0ea6a620021c5b882315f621a20ee43dbbbf102ef707b6fb9555543c5b8";
         async function computeSHA256(str) { const buffer = new TextEncoder().encode(str); const hashBuffer = await crypto.subtle.digest('SHA-256', buffer); const hashArray = Array.from(new Uint8Array(hashBuffer)); return hashArray.map(b => b.toString(16).padStart(2, '0')).join(''); }
         
@@ -308,24 +284,18 @@
                     setTimeout(() => { 
                         adminPanelBlock.style.opacity = "1"; 
                         adminPanelBlock.style.transform = "translateY(0)"; 
-                        
-                        // 🎯 حظر أمني: إذا دخلت لجهازك أو جوالك لأول مرة والذاكرة مفرغة، يفتح نافذة تطلب التوكن لحفظه داخلياً للأبد
-                        if (!localStorage.getItem("active_secure_token")) {
-                            updateStoredToken();
-                        }
+                        if (!localStorage.getItem("active_secure_token")) { updateStoredToken(); }
                     }, 50); 
                 }, 400); 
             } else { alert("الرقم السري خاطئ! تم رفض تصريح العبور الحتمي."); } 
         }
         
         function updateStoredToken() {
-            const userToken = prompt("يرجى إدخال رمز الـ GitHub Token الحالي والمفعّل (ghp_...) الخاص بك للحفظ الآمن بمتصفحك:");
+            const userToken = prompt("يرجى إدخال رمز الـ GitHub Token الحالي والمفعّل (ghp_...) الخاص بك للحفظ بمتصفحك الحالي:");
             if (userToken && userToken.trim().startsWith("ghp_")) {
                 localStorage.setItem("active_secure_token", userToken.trim().replace(/\s/g, ""));
-                alert("✅ تم تشفير وحفظ الـ Token بأمان داخل متصفح جهازك للأبد!");
-            } else {
-                alert("❌ رمز خاطئ! لم يتم تحديث البيانات.");
-            }
+                alert("✅ تم حفظ وتأمين الـ Token بمتصفح جهازك الحالي بنجاح كلي!");
+            } else { alert("❌ رمز خاطئ! لم يتم تحديث البيانات."); }
         }
 
         function generateKeyFromAdmin() { const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase(); document.getElementById("newKeyInput").value = "REL-VIP-" + randomStr; }
@@ -333,7 +303,6 @@
         function b64_to_utf8(str) { return decodeURIComponent(atob(str).split('').map(function(c) { return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2); }).join('')); }
 
         async function injectKeyToGitHubServerAutomatically() {
-            // جلب التوكن النظيف المخزن داخلياً بمتصفح جهازك أو جوالك فوراً
             const secureToken = localStorage.getItem("active_secure_token");
             const rawKey = document.getElementById("newKeyInput").value.trim().toUpperCase();
             const days = parseInt(document.getElementById("keyDaysInput").value);
@@ -345,7 +314,7 @@
             logBox.style.display = "block"; logBox.style.color = "var(--accent-color)"; logBox.innerText = "Connecting to GitHub Secure API, syncing keys_db.json..."; submitBtn.classList.add("pulse-active");
             try {
                 const getRes = await fetch(url, { method: "GET", headers: { "Authorization": `token ${secureToken}`, "Accept": "application/vnd.github.v3+json", "Cache-Control": "no-cache" } });
-                if (!getRes.ok) throw new Error("Sync failed. Stored Token might be invalid or lacks repository permissions.");
+                if (!getRes.ok) throw new Error("Sync failed. Access token might be invalid.");
                 const fileData = await getRes.json(); const sha = fileData.sha;
                 let currentContent = JSON.parse(b64_to_utf8(fileData.content));
                 currentContent[searchKey] = { status: "unused", duration_days: days, hwid: "" };
