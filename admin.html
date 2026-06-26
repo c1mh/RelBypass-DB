@@ -249,19 +249,16 @@
             targetContent.classList.add('active');
         }
 
-        // 🎯 تم دمج نفق الاتصال الآلي المفتوح (Allorigins Proxy Tunnel) لتطهير وقراءة مصفوفة ملف الـ JSON لايف وتفادي قيود الـ CORS تماماً
+        // 🎯 التحديث الجذري والصافي الحين: القراءة الفورية المباشرة لملف الـ JSON المستقر عبر جيت هاب وبأعلى استقرار مجاناً وتخطي الحظر نهائياً
         async function fetchKeysDatabaseLive() {
             const tableBody = document.getElementById("keysTableBody");
-            const rawFileUrl = "https://githubusercontent.com" + new Date().getTime();
-            // استخدام النفق الرقمي المفتوح لتشفير وقبول الطلبات الفورية من الجوال
-            const proxyTunnelUrl = "https://allorigins.win" + encodeURIComponent(rawFileUrl);
+            // استخدام رابط الدومين المستقر التابع للاستضافة الحية حقتك لتجاوز الحظر تماماً وبجزء من الثانية
+            const rawFileUrl = "https://github.io" + new Date().getTime();
 
             try {
-                const res = await fetch(proxyTunnelUrl);
+                const res = await fetch(rawFileUrl);
                 if (!res.ok) throw new Error();
-                
-                const wrapperData = await res.json();
-                const db = JSON.parse(wrapperData.contents);
+                const db = await res.json();
                 
                 let total = 0, unused = 0, used = 0;
                 tableBody.innerHTML = "";
@@ -297,7 +294,7 @@
                 document.getElementById("usedKeysCount").innerText = used;
                 if(total === 0) { tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">قاعدة البيانات فارغة تماماً.</td></tr>`; }
             } catch {
-                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--error-color);">فشل قراءة السيرفر! يرجى الانتظار 3 ثواني وإعادة الضغط على التبويب لتحديث النفق.</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--error-color);">فشل مزامنة الملف! تأكد أن ملف keys_db.json موجود وتم تفعيل الرابط بنجاح.</td></tr>`;
             }
         }
         async function terminateVipKeyLive(targetKey) {
