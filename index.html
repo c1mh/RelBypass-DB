@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REL PREMUM - VIP LOGIN</title>
+    <style>
+        body { background-color: #08080a; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; padding-top: 80px; margin: 0; }
+        .container { background-color: #0e1014; border: 2px solid #ff2832; border-radius: 20px; width: 90%; max-width: 500px; margin: 0 auto; padding: 40px; box-shadow: 0 0 25px rgba(255, 40, 50, 0.2); }
+        h1 { color: #ff2832; font-family: 'Consolas', monospace; letter-spacing: 2px; margin-bottom: 5px; }
+        p { color: #8a8a98; font-size: 14px; margin-bottom: 30px; }
+        input[type="text"] { width: 100%; padding: 14px; background-color: #14161d; border: 1px solid #282832; border-radius: 8px; color: white; font-size: 16px; text-align: center; box-sizing: border-box; margin-bottom: 20px; letter-spacing: 1px; }
+        input[type="text"]:focus { border-color: #ff2832; outline: none; }
+        .btn { background-color: #ff2832; color: white; border: none; width: 100%; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.3s; }
+        .btn:hover { background-color: white; color: #ff2832; box-shadow: 0 0 15px rgba(255, 255, 255, 0.4); }
+        .error-msg { color: #ff2832; font-weight: bold; margin-top: 15px; display: none; font-size: 14px; }
+        .download-zone { display: none; margin-top: 20px; border-top: 1px solid #282832; padding-top: 25px; }
+        .download-btn { background-color: #00dc50; color: white; text-decoration: none; display: block; padding: 15px; font-size: 18px; font-weight: bold; border-radius: 8px; transition: 0.3s; box-shadow: 0 0 15px rgba(0, 220, 80, 0.2); }
+        .download-btn:hover { background-color: white; color: #00dc50; box-shadow: 0 0 15px rgba(255, 255, 255, 0.4); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>R E L  P R E M I U M</h1>
+        <p>أدخل الكود المدفوع (VIP Key) الخاص بك لتحميل ملف البايباس والهاك المحدث</p>
+        
+        <div id="loginForm">
+            <input type="text" id="vipKeyInput" placeholder="REL-VIP-XXXXXXXX" autocomplete="off">
+            <button class="btn" onclick="verifyWebsiteKey()">تسجيل الدخول والتحقق</button>
+            <div class="error-msg" id="errorBlock"></div>
+        </div>
+
+        <!-- شاشة التحميل السرية، مستحيل تظهر إلا لو كان الكود شغال وصالح أونلاين داخل جيت هاب -->
+        <div class="download-zone" id="downloadZone">
+            <h3 style="color: #00dc50; margin-top: 0;">✅ تم التحقق من الكود بنجاح!</h3>
+            <p style="margin-bottom: 20px;" id="durationLabel">جاري حساب الصلاحية...</p>
+            <!-- 🎯 ضع رابط الميديا فاير أو الميجا الفعلي حق تحميل البايباس هنا بداخل الـ href -->
+            <a href="رابط_التحميل_المباشر_حق_البايباس_هنا" class="download-btn" target="_blank">📥 تحميل البايباس والهاك المحدث (VIP)</a>
+        </div>
+    </div>
+
+    <script>
+        async function verifyWebsiteKey() {
+            const inputKey = document.getElementById("vipKeyInput").value.trim().toUpperCase();
+            const errorBlock = document.getElementById("errorBlock");
+            const downloadZone = document.getElementById("downloadZone");
+            const loginForm = document.getElementById("loginForm");
+            const durationLabel = document.getElementById("durationLabel");
+
+            errorBlock.style.display = "none";
+
+            if (!inputKey.startsWith("REL-VIP-") && inputKey !== "REL-VIP-2A651172") {
+                errorBlock.innerText = "❌ صيغة الكود خاطئة! يجب أن تبدأ بـ REL-VIP-";
+                errorBlock.style.display = "block";
+                return;
+            }
+
+            // 🎯 الربط السحابي المباشر والحتمي بمستودع الجيت هاب الخاص بك لايف لقراءة الأكواد الحية
+            const onlineDbUrl = "https://githubusercontent.com";
+            
+            try {
+                const response = await fetch(onlineDbUrl);
+                if (!response.ok) throw new Error();
+                
+                const dbText = await response.text();
+                const dbTextUpper = dbText.toUpperCase();
+                const searchKey = inputKey.toLowerCase(); // الأكواد بداخل الملف بحروف صغيرة
+
+                if (dbTextUpper.includes(inputKey)) {
+                    const keyIndex = dbTextUpper.indexOf(inputKey);
+                    const checkSection = dbText.substring(keyIndex, keyIndex + 400);
+
+                    // 1. الطرد الحتمي من التحميل إذا تم رصد حالة EXPIRED بالملف السحابي
+                    if (checkSection.toUpperCase().includes('"STATUS":"EXPIRED"')) {
+                        errorBlock.innerText = "❌ نأسف، هذا الكود منتهي الصلاحية ومحظور من التحميل!";
+                        errorBlock.style.display = "block";
+                        return;
+                    }
+
+                    // 2. استخراج الأيام وعرضها بداخل شاشة التحميل للزبون
+                    let durationDays = "30";
+                    const daysIndex = checkSection.toLowerCase().indexOf("duration_days");
+                    if (daysIndex !== -1) {
+                        const startPos = checkSection.indexOf(":", daysIndex) + 1;
+                        let endPos = checkSection.indexOf(",", startPos);
+                        if (endPos === -1) endPos = checkSection.indexOf("}", startPos);
+                        if (endPos !== -1) {
+                            durationDays = checkSection.substring(startPos, endPos).replace(/"/g, "").replace(/,/g, "").trim();
+                        }
+                    }
+
+                    loginForm.style.display = "none";
+                    durationLabel.innerText = `صلاحية الكود الخاص بك بملف السيرفر: ${durationDays} يوم`;
+                    downloadZone.style.display = "block";
+                    return;
+                }
+
+                // فتح استثنائي للماستر كود الثابت الخاص بك كمطور
+                if (inputKey === "REL-VIP-2A651172") {
+                    loginForm.style.display = "none";
+                    durationLabel.innerText = "صلاحية الكود الخاص بك: ماستر كود مفتوح المدى";
+                    downloadZone.style.display = "block";
+                    return;
+                }
+
+                errorBlock.innerText = "❌ الكود غير صحيح أو لم يتم تفعيله بالبوت بعد!";
+                errorBlock.style.display = "block";
+
+            } catch (err) {
+                errorBlock.innerText = "❌ فشل الاتصال بالسيرفر! يرجى التحقق من الإنترنت.";
+                errorBlock.style.display = "block";
+            }
+        }
+    </script>
+</body>
+</html>
