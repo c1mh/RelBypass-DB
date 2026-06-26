@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REL BYPASS - ADMIN PANEL</title>
+    <style>
+        body { background-color: #08080a; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; padding-top: 50px; margin: 0; }
+        .container { background-color: #0e1014; border: 2px solid #ff2832; border-radius: 20px; width: 95%; max-width: 550px; margin: 0 auto; padding: 40px; box-shadow: 0 0 25px rgba(255, 40, 50, 0.2); }
+        h1 { color: #ff2832; font-family: 'Consolas', monospace; letter-spacing: 2px; margin-bottom: 30px; }
+        label { display: block; text-align: right; margin-bottom: 8px; font-weight: bold; color: #8a8a98; }
+        input[type="text"], input[type="number"], input[type="password"] { width: 100%; padding: 14px; background-color: #14161d; border: 1px solid #282832; border-radius: 8px; color: white; font-size: 16px; text-align: center; box-sizing: border-box; margin-bottom: 20px; }
+        input:focus { border-color: #ff2832; outline: none; }
+        .btn { background-color: #ff2832; color: white; border: none; width: 100%; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn:hover { background-color: white; color: #ff2832; box-shadow: 0 0 15px rgba(255, 255, 255, 0.4); }
+        .log-box { background-color: #000; border: 1px solid #282832; padding: 15px; margin-top: 20px; text-align: left; font-family: monospace; border-radius: 5px; color: #00dc50; font-size: 13px; max-height: 120px; overflow-y: auto; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>👑 لوحة التحكم والمفاتيح السرية</h1>
+        
+        <label>1️⃣ توكن جيت هاب السري (GitHub Token):</label>
+        <input type="password" id="githubToken" placeholder="ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" autocomplete="off">
+
+        <label>2️⃣ اكتب كود الـ VIP المدفوع (أو اضغط توليد عشوائي):</label>
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <input type="text" id="newKeyInput" placeholder="REL-VIP-XXXXXX" style="margin-bottom: 0;">
+            <button class="btn" style="margin-top: 0; width: auto; white-space: nowrap; padding: 0 20px;" onclick="generateKeyFromAdmin()">🎲 عشوائي</button>
+        </div>
+
+        <label>3️⃣ حدد مدة الصلاحية على كيفك بالملي (بالأيام):</label>
+        <input type="number" id="keyDaysInput" placeholder="اكتب عدد الأيام المالي بدقة (مثال: 3 أو 14)" min="1">
+
+        <button class="btn" onclick="injectKeyToGitHubServer()">🚀 صناعة وحقن الكود في السيرفر السحابي</button>
+        
+        <div class="log-box" id="logBox"></div>
+    </div>
+
+    <script>
+        // دالة توليد كود عشوائي فخم داخل اللوحة
+        function generateKeyFromAdmin() {
+            const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+            document.getElementById("newKeyInput").value = "REL-VIP-" + randomStr;
+        }
+
+        // 🚀 دالة الاتصال والحقن السحابي المباشر في جيت هاب بدون ملفات محليه
+        async function injectKeyToGitHubServer() {
+            const token = document.getElementById("githubToken").value.trim();
+            const rawKey = document.getElementById("newKeyInput").value.trim().toUpperCase();
+            const days = parseInt(document.getElementById("keyDaysInput").value);
+            const logBox = document.getElementById("logBox");
+
+            if (!token || !rawKey || isNaN(days) || days <= 0) {
+                alert("❌ يرجى ملء كافة الخانات وتحديد عدد أيام صحيح!");
+                return;
+            }
+
+            const searchKey = rawKey.toLowerCase(); // الكود بداخل السيرفر يكون بأحرف صغيرة
+            logBox.style.display = "block";
+            logBox.innerText = "⏳ جاري الاتصال بخادم جيت هاب وجلب ملف البيانات الحالية...";
+
+            // مسارات ومحددات مستودع الجيت هاب الخاص بك بالملي
+            const repoOwner = "c1mh";
+            const repoName = "RelBypass-DB";
+            const filePath = "keys_db.json";
+            const url = `https://github.com{repoOwner}/${repoName}/contents/${filePath}`;
+
+            try {
+                // 1. جلب الملف الحالي والـ SHA الخاص به من جيت هاب
+                const getRes = await fetch(url, { headers: { "Authorization": `token ${token}` } });
+                if (!getRes.ok) throw new Error("فشل في العثور على الملف أو التوكن غير صحيح!");
+                
+                const fileData = await getRes.json();
+                const sha = fileData.sha;
+                // فك تشفير محتوى الملف القديم من Base64
+                let currentContent = JSON.parse(atob(fileData.content));
+
+                // 2. حقن الكود الجديد والمدة التي حددتها أنت على كيفك بالملي داخل المصفوفة
+                currentContent[searchKey] = {
+                    status: "unused",
+                    duration_days: days
+                };
+
+                // إعادة تشفير الملف المحدث إلى Base64 لإرساله
+                const updatedContentBase64 = btoa(JSON.stringify(currentContent, null, 4));
+
+                logBox.innerText += "\n⏳ جاري حقن الكود الجديد وتحديث قاعدة البيانات السحابية...";
+
+                // 3. رفع وتحديث الملف النهائي أونلاين على السيرفر بلمحة بصر
+                const putRes = await fetch(url, {
+                    method: "PUT",
+                    headers: {
+                        "Authorization": `token ${token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        message: `Admin Generated Key: ${rawKey} for ${days} Days`,
+                        content: updatedContentBase64,
+                        sha: sha
+                    })
+                });
+
+                if (putRes.ok) {
+                    logBox.innerHTML += `<br><span style="color: #00dc50;">✅ نجاح باهر! تم حقن الكود المدفوع [ ${rawKey} ] لمدة [ ${days} يوم ] بنجاح، وهو فعال الحين في الأداة والموقع!</span>`;
+                    alert(`✅ تم إنشاء وحقن الكود بنجاح!\nالكود: ${rawKey}\nالمدة: ${days} يوم`);
+                } else {
+                    throw new Error("فشل في حفظ التعديلات السحابية!");
+                }
+
+            } catch (err) {
+                logBox.innerHTML += `<br><span style="color: #ff2832;">❌ خطأ برمجي: ${err.message}</span>`;
+                alert("❌ فشل الحقن السحابي! تأكد من صحة التوكن السري الخاص بك.");
+            }
+        }
+    </script>
+</body>
+</html>
