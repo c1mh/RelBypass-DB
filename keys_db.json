@@ -1,0 +1,42 @@
+{
+    "vip_keys": {
+        "REL-VIP-7S2LM360": {
+            "status": "UNUSED",
+            "duration_days": 30,
+            "expires_at": "2026-07-19T22:39:13.584Z",
+            "activated_by": null,
+            "hwid": null
+        },
+        "REL-VIP-XZYOV347": {
+            "status": "UNUSED",
+            "duration_days": 1,
+            "expires_at": "2026-06-20T22:42:11.679Z",
+            "activated_by": null,
+            "hwid": null
+        },
+        "REL-VIP-DO88NJYU": {
+            "status": "UNUSED",
+            "duration_days": 1,
+            "expires_at": "2026-06-20T22:43:54.047Z",
+            "activated_by": null,
+            "hwid": null
+        }
+    },
+    "free_keys": {
+        "REL-FREE-3B3L00": {
+            "status": "UNUSED",
+            "expires_at": "2026-06-20T00:07:30.246Z",
+            "requested_by": "1273064244530647041",
+            "hwid": null
+        }
+    },
+    "last_free_request": {
+        "1273064244530647041": 1781908650246
+    },
+    "seller_daily_count": {
+        "1456469630087336008": {
+            "date": "2026-06-20",
+            "count": 1
+        }
+    }
+}
